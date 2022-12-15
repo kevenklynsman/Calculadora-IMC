@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculadora IMC</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="calcContainer">
+        <h2>Calculadora de IMC</h2>
+        <form id="imcForm">
+          <div class="formInputs">
+            <div class="formControl">
+              <label for="height">Altura:</label>
+              <input
+                type="text"
+                name="height"
+                id="height"
+                placeholder="Exemplo 1,75"
+              />
+            </div>
+            <div class="formControl">
+              <label for="weight">Peso:</label>
+              <input
+                type="text"
+                name="weight"
+                id="weight"
+                placeholder="Exemplo 70,5"
+              />
+            </div>
+          </div>
+          <div class="actionControl">
+            <button id="calcButton">Calcular</button>
+            <button id="cleanButton">Limpar</button>
+          </div>
+        </form>
+      </div>
+      <div id="resultContainer" class="hide">
+        <p id="imcNumber">Seu IMC: <span></span></p>
+        <p id="imcInfo">Situação atual: <span></span></p>
+        <h3>Confira as Classificações:</h3>
+        <div id="imcTable">
+          <div class="tableHeader">
+            <h4>IMC</h4>
+            <h4>Classificação</h4>
+            <h4>Obesidade</h4>
+          </div>
+        </div>
+        <button id="backButton">Voltar</button>
+      </div>
+    </div>
+  </body>
+</html>
