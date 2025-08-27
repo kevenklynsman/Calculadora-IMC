@@ -1,6 +1,6 @@
 # Calculadora de Idade
 
-![Imagem](../Calculadora-IMC/images/imagem01.png)
+![Imagem](./images/imagem01.png)
 
 ## Descrição
 
@@ -43,8 +43,8 @@ cd Calculadora-IMC
 
 ## Imagens
 
-![Imagem](../Calculadora-IMC/images/imagem02.png)
-![Imagem](../Calculadora-IMC/images/imagem03.png)
+![Imagem](./images/imagem02.png)
+![Imagem](./images/imagem03.png)
 
 
 ## Contato 
