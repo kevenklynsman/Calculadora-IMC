@@ -37,6 +37,7 @@ const data = [
   },
 ];
 
+
 // Seleção de Elementos
 
 const imcTable = document.querySelector("#imcTable");
@@ -55,26 +56,40 @@ const imcInfo = document.querySelector("#imcInfo span");
 
 const backButton = document.querySelector("#backButton");
 
-// Funções
+// Fun es
 function createTable(data) {
-  data.forEach((item) => {
-    const div = document.createElement("div");
-    div.classList.add("tableData");
+  const tableDataElements = data.map((item) => {
+    const tableDataElement = document.createElement("div");
+    tableDataElement.classList.add("tableData");
 
-    const classification = document.createElement("p");
-    classification.innerText = item.classification;
+    const classificationElement = document.createElement("p");
+    classificationElement.innerText = item.classification;
 
-    const info = document.createElement("p");
-    info.innerText = item.info;
+    const infoElement = document.createElement("p");
+    infoElement.innerText = item.info;
 
-    const obesity = document.createElement("p");
-    obesity.innerText = item.obesity;
+    const obesityElement = document.createElement("p");
+    obesityElement.innerText = item.obesity;
 
-    div.appendChild(classification);
-    div.appendChild(info);
-    div.appendChild(obesity);
+    obesityElement.classList.add(
+      item.obesity === "0"
+        ? "good"
+        : item.obesity === "I"
+        ? "low"
+        : item.obesity === "II"
+        ? "medium"
+        : "high"
+    );
 
-    imcTable.appendChild(div);
+    tableDataElement.appendChild(classificationElement);
+    tableDataElement.appendChild(infoElement);
+    tableDataElement.appendChild(obesityElement);
+
+    return tableDataElement;
+  });
+
+  tableDataElements.forEach((element) => {
+    imcTable.appendChild(element);
   });
 }
 
