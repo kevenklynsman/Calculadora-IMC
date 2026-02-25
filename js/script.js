@@ -1,5 +1,5 @@
-// Dados de IMC
-const data = [
+// Regras de classificação do IMC
+const IMC_RANGES = [
   {
     min: 0,
     max: 18.4,
@@ -37,30 +37,135 @@ const data = [
   },
 ];
 
+// Mapeamentos de estilo (evita switch/case repetitivo)
+const OBESITY_CLASS_BY_LEVEL = {
+  "0": "good",
+  I: "low",
+  II: "medium",
+  III: "high",
+};
 
-// Seleção de Elementos
+const RESULT_CLASS_BY_INFO = {
+  Magreza: "low",
+  Normal: "good",
+  Sobrepeso: "low",
+  Obesidade: "medium",
+  "Obesidade grave": "high",
+};
 
-const imcTable = document.querySelector("#imcTable");
+// Seletores centralizados (Single Source of Truth)
+const elements = {
+  imcTable: document.querySelector("#imcTable"),
+  heightInput: document.querySelector("#height"),
+  weightInput: document.querySelector("#weight"),
+  calcButton: document.querySelector("#calcButton"),
+  cleanButton: document.querySelector("#cleanButton"),
+  calcContainer: document.querySelector("#calcContainer"),
+  resultContainer: document.querySelector("#resultContainer"),
+  imcNumber: document.querySelector("#imcNumber span"),
+  imcInfo: document.querySelector("#imcInfo span"),
+  backButton: document.querySelector("#backButton"),
+};
 
-const heightInput = document.querySelector("#height");
-const weightInput = document.querySelector("#weight");
+// Sanitiza texto para padrão local (apenas números e vírgula)
+function sanitizeLocaleInput(text) {
+  return text.replace(/\./g, ",").replace(/[^0-9,]/g, "");
+}
 
-const calcButton = document.querySelector("#calcButton");
-const cleanButton = document.querySelector("#cleanButton");
+// Máscara de input: máscara de altura (autoformata para 2 casas decimais)
+function formatHeightInput(text) {
+  const value = sanitizeLocaleInput(text);
 
-const calcContainer = document.querySelector("#calcContainer");
-const resultContainer = document.querySelector("#resultContainer");
+  if (!value) return "";
 
-const imcNumber = document.querySelector("#imcNumber span");
-const imcInfo = document.querySelector("#imcInfo span");
+  if (value.includes(",")) {
+    const [integerPartRaw, ...rest] = value.split(",");
+    const integerPart = integerPartRaw || "0";
+    const decimalPart = rest.join("").slice(0, 2);
 
-const backButton = document.querySelector("#backButton");
+    return decimalPart ? `${integerPart},${decimalPart}` : `${integerPart},`;
+  }
 
-// Fun es
-function createTable(data) {
-  const tableDataElements = data.map((item) => {
-    const tableDataElement = document.createElement("div");
-    tableDataElement.classList.add("tableData");
+  const digitsOnly = value.replace(/\D/g, "");
+
+  if (digitsOnly.length > 2) {
+    return `${digitsOnly.slice(0, -2)},${digitsOnly.slice(-2)}`;
+  }
+
+  return digitsOnly;
+}
+
+// Máscara de input: máscara de peso (até 999,9)
+function formatWeightInput(text) {
+  const value = sanitizeLocaleInput(text);
+
+  if (!value) return "";
+
+  const maxIntegerDigits = 3;
+  const maxDecimalDigits = 1;
+
+  if (!value.includes(",")) {
+    return value.replace(/\D/g, "").slice(0, maxIntegerDigits);
+  }
+
+  const [integerPartRaw, ...rest] = value.split(",");
+  const integerPart = integerPartRaw
+    .replace(/\D/g, "")
+    .slice(0, maxIntegerDigits);
+  const decimalPart = rest
+    .join("")
+    .replace(/\D/g, "")
+    .slice(0, maxDecimalDigits);
+
+  return decimalPart ? `${integerPart},${decimalPart}` : `${integerPart},`;
+}
+
+// Strategy Pattern simples para máscaras por campo
+const inputMaskStrategies = {
+  height: formatHeightInput,
+  weight: formatWeightInput,
+};
+
+function parseLocaleNumber(value) {
+  return Number(value.replace(",", "."));
+}
+
+function calculateImc(height, weight) {
+  return Number((weight / (height * height)).toFixed(1));
+}
+
+function getImcInfo(imc) {
+  const range = IMC_RANGES.find((item) => imc >= item.min && imc <= item.max);
+  return range ? range.info : null;
+}
+
+function resetInputsAndStyles() {
+  elements.heightInput.value = "";
+  elements.weightInput.value = "";
+  elements.imcNumber.className = "";
+  elements.imcInfo.className = "";
+}
+
+function toggleResults() {
+  elements.calcContainer.classList.toggle("hide");
+  elements.resultContainer.classList.toggle("hide");
+}
+
+function applyResultStyles(info) {
+  const cssClass = RESULT_CLASS_BY_INFO[info];
+
+  if (!cssClass) return;
+
+  elements.imcNumber.classList.add(cssClass);
+  elements.imcInfo.classList.add(cssClass);
+}
+
+function createTable(ranges) {
+  const fragment = document.createDocumentFragment();
+
+  ranges.forEach((item) => {
+    const row = document.createElement("div");
+    row.classList.add("tableData");
 
     const classificationElement = document.createElement("p");
     classificationElement.innerText = item.classification;
@@ -70,121 +175,64 @@ function createTable(data) {
 
     const obesityElement = document.createElement("p");
     obesityElement.innerText = item.obesity;
+    obesityElement.classList.add(OBESITY_CLASS_BY_LEVEL[item.obesity] || "high");
 
-    obesityElement.classList.add(
-      item.obesity === "0"
-        ? "good"
-        : item.obesity === "I"
-        ? "low"
-        : item.obesity === "II"
-        ? "medium"
-        : "high"
-    );
-
-    tableDataElement.appendChild(classificationElement);
-    tableDataElement.appendChild(infoElement);
-    tableDataElement.appendChild(obesityElement);
-
-    return tableDataElement;
+    row.append(classificationElement, infoElement, obesityElement);
+    fragment.appendChild(row);
   });
 
-  tableDataElements.forEach((element) => {
-    imcTable.appendChild(element);
-  });
+  elements.imcTable.appendChild(fragment);
 }
 
-function cleanInputs() {
-  heightInput.value = "";
-  weightInput.value = "";
-  imcNumber.classList = "";
-  imcInfo.classList = "";
+function handleInputMask(event) {
+  const maskStrategy = inputMaskStrategies[event.target.id];
+
+  if (!maskStrategy) return;
+
+  event.target.value = maskStrategy(event.target.value);
 }
 
-function validDigits(text) {
-  return text.replace(/[^0-9,]/g, "");
-}
+function handleCalculate(event) {
+  event.preventDefault();
 
-function calcImc(height, weight) {
-  const imc = (weight / (height * height)).toFixed(1);
-
-  return imc;
-}
-
-function showOrHideResults() {
-  calcContainer.classList.toggle("hide");
-  resultContainer.classList.toggle("hide");
-}
-
-// Inicialização
-
-createTable(data);
-
-// Eventos
-
-[heightInput, weightInput].forEach((element) => {
-  element.addEventListener("input", (e) => {
-    const updateValue = validDigits(e.target.value);
-
-    e.target.value = updateValue;
-  });
-});
-
-calcButton.addEventListener("click", (e) => {
-  e.preventDefault();
-
-  const height = +heightInput.value.replace(",", ".");
-  const weight = +weightInput.value.replace(",", ".");
+  const height = parseLocaleNumber(elements.heightInput.value);
+  const weight = parseLocaleNumber(elements.weightInput.value);
 
   if (!height || !weight) return;
 
-  const imc = calcImc(height, weight);
-
-  let info;
-
-  data.forEach((item) => {
-    if (imc >= item.min && imc <= item.max) {
-      info = item.info;
-    }
-  });
+  const imc = calculateImc(height, weight);
+  const info = getImcInfo(imc);
 
   if (!info) return;
 
-  imcNumber.innerText = imc;
-  imcInfo.innerText = info;
+  elements.imcNumber.innerText = String(imc).replace(".", ",");
+  elements.imcInfo.innerText = info;
 
-  switch (info) {
-    case "Magreza":
-      imcNumber.classList.add("low");
-      imcInfo.classList.add("low");
-      break;
-    case "Normal":
-      imcNumber.classList.add("good");
-      imcInfo.classList.add("good");
-      break;
-    case "Sobrepeso":
-      imcNumber.classList.add("low");
-      imcInfo.classList.add("low");
-      break;
-    case "Obesidade":
-      imcNumber.classList.add("medium");
-      imcInfo.classList.add("medium");
-      break;
-    case "Obesidade grave":
-      imcNumber.classList.add("high");
-      imcInfo.classList.add("high");
-      break;
-  }
+  applyResultStyles(info);
+  toggleResults();
+}
 
-  showOrHideResults();
-});
+function handleClean(event) {
+  event.preventDefault();
+  resetInputsAndStyles();
+}
 
-cleanButton.addEventListener("click", (e) => {
-  e.preventDefault();
+function handleBack() {
+  resetInputsAndStyles();
+  toggleResults();
+}
 
-  cleanInputs();
-});
+function initialize() {
+  createTable(IMC_RANGES);
 
-backButton.addEventListener("click", () => {
-  cleanInputs();
-  showOrHideResults();
-});
+  [elements.heightInput, elements.weightInput].forEach((input) => {
+    input.addEventListener("input", handleInputMask);
+  });
+
+  elements.calcButton.addEventListener("click", handleCalculate);
+  elements.cleanButton.addEventListener("click", handleClean);
+  elements.backButton.addEventListener("click", handleBack);
+}
+
+// Ponto único de entrada da aplicação
+initialize();
